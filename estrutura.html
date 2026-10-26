@@ -1,29 +1,239 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RPS</title>
-    <link rel="stylesheet" href="style.css">
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #101827;
+            color: white;
+            text-align: center;
+            padding: 30px 15px;
+        }
+
+        .jogo {
+            max-width: 500px;
+            margin: auto;
+            background: #1e293b;
+            padding: 25px;
+            border-radius: 15px;
+        }
+
+        h1 {
+            color: #38bdf8;
+        }
+
+        button, select {
+            padding: 12px;
+            margin: 6px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button {
+            background: #38bdf8;
+            color: #101827;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: #7dd3fc;
+        }
+
+        .escolhas button {
+            font-size: 35px;
+            width: 90px;
+            height: 80px;
+        }
+
+        #resultado {
+            font-size: 20px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+
+        .placar {
+            font-size: 18px;
+            margin: 15px;
+        }
+    </style>
 </head>
+
 <body>
 
-    <h1>RPS</h1>
-    <h2>Pedra, Papel e Tesoura</h2>
+    <div class="jogo">
+        <h1>✊ Joquempô ✋</h1>
+        <p>Escolha pedra, papel ou tesoura!</p>
 
-    <p>Escolha sua jogada:</p>
+        <label for="dificuldade">Dificuldade:</label>
+        <select id="dificuldade">
+            <option value="0">Muito fácil</option>
+            <option value="1">Fácil</option>
+            <option value="2">Médio</option>
+            <option value="3">Difícil</option>
+        </select>
 
-    <button onclick="jogar('pedra')"> Pedra</button>
-    <button onclick="jogar('papel')"> Papel</button>
-    <button onclick="jogar('tesoura')">Tesoura</button>
+        <br>
 
-    <div id="resultado">
-        Faça sua escolha!
+        <label for="modo">Modo de jogo:</label>
+        <select id="modo">
+            <option value="3">Melhor de 3</option>
+            <option value="5">Melhor de 5</option>
+        </select>
+
+        <div class="escolhas">
+            <button onclick="jogar('pedra')">✊</button>
+            <button onclick="jogar('papel')">✋</button>
+            <button onclick="jogar('tesoura')">✌️</button>
+        </div>
+
+        <p id="suaEscolha">Você: ❔</p>
+        <p id="escolhaBot">Bot: ❔</p>
+
+        <div class="placar">
+            Você: <span id="pontosJogador">0</span>
+            |
+            Bot: <span id="pontosBot">0</span>
+        </div>
+
+        <p id="resultado">Faça sua jogada!</p>
+
+        <button onclick="reiniciar()">🔄 Reiniciar jogo</button>
     </div>
 
-    <p>Você: <span id="pontosJogador">0</span></p>
-    <p>Robô: <span id="pontosRobo">0</span></p>
+    <script>
+        let pontosJogador = 0;
+        let pontosBot = 0;
+        let rodadas = 0;
+        let jogoFinalizado = false;
 
-    <script src="script.js"></script>
+        const opcoes = ["pedra", "papel", "tesoura"];
+
+        const emojis = {
+            pedra: "✊",
+            papel: "✋",
+            tesoura: "✌️"
+        };
+
+        function jogar(escolha) {
+            if (jogoFinalizado) return;
+
+            const dificuldade = Number(
+                document.getElementById("dificuldade").value
+            );
+
+            const melhorDe = Number(
+                document.getElementById("modo").value
+            );
+
+            let bot;
+
+            // O bot aprende a prever sua jogada
+            // nas dificuldades mais altas.
+            if (dificuldade === 0) {
+                bot = opcoes[Math.floor(Math.random() * 3)];
+            } else if (dificuldade === 1) {
+                bot = Math.random() < 0.7
+                    ? opcoes[Math.floor(Math.random() * 3)]
+                    : vencer(escolha);
+            } else if (dificuldade === 2) {
+                bot = Math.random() < 0.5
+                    ? opcoes[Math.floor(Math.random() * 3)]
+                    : vencer(escolha);
+            } else {
+                bot = Math.random() < 0.75
+                    ? vencer(escolha)
+                    : opcoes[Math.floor(Math.random() * 3)];
+            }
+
+            document.getElementById("suaEscolha").textContent =
+                "Você: " + emojis[escolha];
+
+            document.getElementById("escolhaBot").textContent =
+                "Bot: " + emojis[bot];
+
+            rodadas++;
+
+            if (escolha === bot) {
+                document.getElementById("resultado").textContent =
+                    "Empate!";
+            } else if (
+                (escolha === "pedra" && bot === "tesoura") ||
+                (escolha === "papel" && bot === "pedra") ||
+                (escolha === "tesoura" && bot === "papel")
+            ) {
+                pontosJogador++;
+                document.getElementById("resultado").textContent =
+                    "Você venceu esta rodada!";
+            } else {
+                pontosBot++;
+                document.getElementById("resultado").textContent =
+                    "O bot venceu esta rodada!";
+            }
+
+            atualizarPlacar();
+
+            const vitoriasNecessarias = Math.floor(melhorDe / 2) + 1;
+
+            if (
+                pontosJogador >= vitoriasNecessarias ||
+                pontosBot >= vitoriasNecessarias
+            ) {
+                jogoFinalizado = true;
+
+                document.getElementById("resultado").textContent =
+                    pontosJogador > pontosBot
+                        ? "🏆 PARABÉNS! Você venceu o jogo!"
+                        : "🤖 O bot venceu! Tente novamente!";
+            }
+        }
+
+        function vencer(escolha) {
+            if (escolha === "pedra") return "papel";
+            if (escolha === "papel") return "tesoura";
+            return "pedra";
+        }
+
+        function atualizarPlacar() {
+            document.getElementById("pontosJogador").textContent =
+                pontosJogador;
+
+            document.getElementById("pontosBot").textContent =
+                pontosBot;
+        }
+
+        function reiniciar() {
+            pontosJogador = 0;
+            pontosBot = 0;
+            rodadas = 0;
+            jogoFinalizado = false;
+
+            atualizarPlacar();
+
+            document.getElementById("suaEscolha").textContent =
+                "Você: ❔";
+
+            document.getElementById("escolhaBot").textContent =
+                "Bot: ❔";
+
+            document.getElementById("resultado").textContent =
+                "Faça sua jogada!";
+        }
+
+        document.getElementById("dificuldade").addEventListener(
+            "change", reiniciar
+        );
+
+        document.getElementById("modo").addEventListener(
+            "change", reiniciar
+        );
+    </script>
+
 </body>
 </html>
